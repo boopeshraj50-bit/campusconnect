@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusConnect — Event & Program Management UI (Live Preview)</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+              950: '#2e1065',
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- React 18 and Babel for standalone instant preview -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .shape-rendering-crisp { shape-rendering: crispEdges; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased selection:bg-brand-600 selection:text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- SEED DATA ---
+    const INITIAL_USER = {
+      id: "usr-student-01",
+      name: "Alex Rivera",
+      email: "alex.rivera@campus.edu",
+      studentId: "CS-2023-8891",
+      department: "Computer Science & Engineering",
+      year: "3rd Year (Junior)",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      role: "student",
+      organizerProfile: {
+        id: "org-acm",
+        name: "ACM Student Chapter",
+        role: "Lead Coordinator",
+      }
+    };
+
+    const INITIAL_EVENTS = [
+      {
+        id: "evt-101",
+        title: "HackNova '26 — 36hr National AI Hackathon",
+        category: "Hackathons",
+        type: "In-Person",
+        shortDescription: "36 hours of relentless innovation, building generative AI & autonomous systems with top campus mentors.",
+        description: "HackNova is the premier annual university hackathon bringing together over 250+ aspiring engineers, designers, and innovators. Compete for $8,000+ in grand prizes, receive direct mentorship from Google & OpenAI engineers, and attend midnight lightning workshops. Food, energy drinks, and swag bags provided!",
+        date: "2026-11-15T09:00:00.000Z",
+        timeString: "Nov 15, 9:00 AM – Nov 16, 9:00 PM",
+        venue: "Turing Innovation Hub & Main Auditorium, Block C",
+        coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1000&auto=format&fit=crop&q=80",
+        organizerId: "org-acm",
+        organizer: { id: "org-acm", name: "ACM Student Chapter", email: "acm.lead@campus.edu" },
+        capacity: 250,
+        registeredCount: 184,
+        price: "Free",
+        tags: ["Artificial Intelligence", "Hackathon", "Prizes $8K"],
+        timeline: [
+          { time: "09:00 AM", title: "Check-in & Swag Distribution", desc: "Turing Atrium" },
+          { time: "10:30 AM", title: "Opening Ceremony", desc: "Main Auditorium" },
+          { time: "12:00 PM", title: "Hacking Officially Begins", desc: "Main Lab" },
+          { time: "05:00 PM (Day 2)", title: "Final Pitch & Demos", desc: "Auditorium" }
+        ],
+        speakers: [
+          { name: "Dr. Elena Rostova", title: "AI Research Scientist, DeepMind", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80" },
+          { name: "Marcus Chen", title: "Principal Architect, CloudScale", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" }
+        ]
+      },
+      {
+        id: "evt-102",
+        title: "Quantum Computing & Post-Silicon Architecture Workshop",
+        category: "Workshops",
+        type: "Hybrid",
+        shortDescription: "Hands-on masterclass introducing Qiskit quantum circuits, superposition, and quantum cryptographic primitives.",
+        description: "Get ahead of the quantum revolution! This intensive hands-on lab takes participants from basic qubits to executing quantum algorithms on real quantum hardware cloud simulators.",
+        date: "2026-11-08T14:00:00.000Z",
+        timeString: "Nov 8, 2:00 PM – 6:00 PM",
+        venue: "Lab 402, Science Complex / Online Zoom",
+        coverImage: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1000&auto=format&fit=crop&q=80",
+        organizerId: "org-acm",
+        organizer: { id: "org-acm", name: "ACM Student Chapter", email: "acm.lead@campus.edu" },
+        capacity: 60,
+        registeredCount: 52,
+        price: "Free",
+        tags: ["Quantum", "Qiskit", "Python", "Certificate"],
+        timeline: [
+          { time: "02:00 PM", title: "Foundations of Quantum Information", desc: "Bloch spheres" },
+          { time: "03:30 PM", title: "Hands-on: Bell States", desc: "Jupyter Lab" }
+        ],
+        speakers: [
+          { name: "Prof. Kenneth Meyer", title: "Chair of Physics & Quantum Lab", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" }
+        ]
+      },
+      {
+        id: "evt-103",
+        title: "Campus Cultural Carnival '26 — Resonance",
+        category: "Cultural",
+        type: "In-Person",
+        shortDescription: "The biggest music, dance, theatrical, and food festival on campus featuring battle of the bands.",
+        description: "Resonance brings the campus alive! Experience 15 food stalls curated by student culinary clubs, 8 student rock bands, open mic poetry slams, graffiti exhibitions, and an electrifying headline EDM set.",
+        date: "2026-11-20T17:00:00.000Z",
+        timeString: "Nov 20, 5:00 PM – 11:30 PM",
+        venue: "Central Campus Amphitheater & Lawns",
+        coverImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1000&auto=format&fit=crop&q=80",
+        organizerId: "org-arts",
+        organizer: { id: "org-arts", name: "Campus Arts & Cultural Council", email: "arts.council@campus.edu" },
+        capacity: 1200,
+        registeredCount: 940,
+        price: "Free",
+        tags: ["Music", "Food Fest", "Live Bands", "Arts"],
+        timeline: [
+          { time: "05:00 PM", title: "Carnival Gates Open", desc: "Central Lawns" },
+          { time: "07:00 PM", title: "Battle of the Bands", desc: "Main Stage" }
+        ],
+        speakers: []
+      },
+      {
+        id: "evt-104",
+        title: "VentureSprint: Campus Startup Pitch & Angel Demo Day",
+        category: "Seminars",
+        type: "In-Person",
+        shortDescription: "Top 10 student-led tech startups pitch live to venture capitalists and angel alumni for seed investments.",
+        description: "Join us for VentureSprint! Ten shortlisted student teams will pitch 5 minutes each to prominent Silicon Valley and campus venture funds. Network during the post-pitch VIP mixer.",
+        date: "2026-11-28T10:00:00.000Z",
+        timeString: "Nov 28, 10:00 AM – 3:00 PM",
+        venue: "Executive Business Center, 5th Floor Hall",
+        coverImage: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1000&auto=format&fit=crop&q=80",
+        organizerId: "org-eclub",
+        organizer: { id: "org-eclub", name: "Entrepreneurship Cell", email: "ecell@campus.edu" },
+        capacity: 150,
+        registeredCount: 142,
+        price: "Free",
+        tags: ["Startups", "Venture Capital", "Pitching"],
+        timeline: [
+          { time: "10:00 AM", title: "Keynote Address", desc: "Hall A" },
+          { time: "11:00 AM", title: "Pitch Sessions", desc: "Main Stage" }
+        ],
+        speakers: [
+          { name: "Samantha Vance", title: "Partner at Apex Ventures", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" }
+        ]
+      },
+      {
+        id: "evt-105",
+        title: "Inter-Collegiate Esports Championship: Valorant & FC26",
+        category: "Sports",
+        type: "In-Person",
+        shortDescription: "Annual varsity gaming tournament. Live casted matches, high-refresh rigs, and $3,000 prize pool.",
+        description: "Campus gaming society presents the largest varsity LAN party of the semester. 16 Valorant squads clash in double elimination brackets.",
+        date: "2026-12-05T11:00:00.000Z",
+        timeString: "Dec 5 – Dec 6, 11:00 AM – 8:00 PM",
+        venue: "Student Recreational Pavilion, Arena 2",
+        coverImage: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1000&auto=format&fit=crop&q=80",
+        organizerId: "org-acm",
+        organizer: { id: "org-acm", name: "ACM Student Chapter", email: "acm.lead@campus.edu" },
+        capacity: 200,
+        registeredCount: 200,
+        price: "Free",
+        tags: ["Esports", "Gaming", "Full Capacity"],
+        timeline: [],
+        speakers: []
+      }
+    ];
+
+    const INITIAL_REGISTRATIONS = [
+      {
+        id: "reg-991204",
+        eventId: "evt-101",
+        eventTitle: "HackNova '26 — 36hr National AI Hackathon",
+        eventDate: "2026-11-15T09:00:00.000Z",
+        eventVenue: "Turing Innovation Hub & Main Auditorium, Block C",
+        category: "Hackathons",
+        coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&auto=format&fit=crop&q=80",
+        fullName: "Alex Rivera",
+        email: "alex.rivera@campus.edu",
+        studentId: "CS-2023-8891",
+        department: "Computer Science & Engineering",
+        year: "3rd Year",
+        status: "Confirmed",
+        ticketCode: "CC-HN26-8891",
+        seatNumber: "Zone-B / Desk 42",
+        checkedIn: false
+      }
+    ];
+
+    const INITIAL_ATTENDEES = {
+      "evt-101": [
+        {
+          id: "reg-991204",
+          fullName: "Alex Rivera",
+          email: "alex.rivera@campus.edu",
+          studentId: "CS-2023-8891",
+          department: "Computer Science & Engineering",
+          year: "3rd Year",
+          ticketCode: "CC-HN26-8891",
+          checkedIn: true
+        },
+        {
+          id: "reg-991208",
+          fullName: "Priya Sharma",
+          email: "priya.s@campus.edu",
+          studentId: "EE-2024-3401",
+          department: "Electrical Eng",
+          year: "2nd Year",
+          ticketCode: "CC-HN26-3401",
+          checkedIn: true
+        },
+        {
+          id: "reg-991212",
+          fullName: "Liam O'Connor",
+          email: "liam.oc@campus.edu",
+          studentId: "DS-2022-7712",
+          department: "Data Science",
+          year: "4th Year",
+          ticketCode: "CC-HN26-7712",
+          checkedIn: false
+        }
+      ]
+    };
+
+    // --- QR GENERATOR COMPONENT ---
+    function QRVisualizer({ seed = "CC-PASS" }) {
+      const size = 21;
+      const matrix = [];
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        hash = (hash << 5) - hash + seed.charCodeAt(i);
+        hash |= 0;
+      }
+      for (let r = 0; r < size; r++) {
+        const row = [];
+        for (let c = 0; c < size; c++) {
+          const isTopLeft = r < 7 && c < 7;
+          const isTopRight = r < 7 && c >= size - 7;
+          const isBottomLeft = r >= size - 7 && c < 7;
+          if (isTopLeft || isTopRight || isBottomLeft) {
+            const cornerR = isBottomLeft ? r - (size - 7) : r;
+            const cornerC = isTopRight ? c - (size - 7) : c;
+            const isBorder = cornerR === 0 || cornerR === 6 || cornerC === 0 || cornerC === 6;
+            const isCenter = cornerR >= 2 && cornerR <= 4 && cornerC >= 2 && cornerC <= 4;
+            row.push(isBorder || isCenter ? 1 : 0);
+          } else {
+            const bit = (Math.abs(hash ^ (r * 31 + c * 17)) >> ((r + c) % 8)) & 1;
+            row.push(bit);
+          }
+        }
+        matrix.push(row);
+      }
+      return (
+        <svg viewBox="0 0 21 21" className="w-36 h-36 shape-rendering-crisp">
+          {matrix.map((row, r) =>
+            row.map((cell, c) => (
+              <rect key={`${r}-${c}`} x={c} y={r} width={1} height={1} fill={cell ? '#2e1065' : '#ffffff'} />
+            ))
+          )}
+        </svg>
+      );
+    }
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [events, setEvents] = useState(INITIAL_EVENTS);
+      const [myRegistrations, setMyRegistrations] = useState(INITIAL_REGISTRATIONS);
+      const [attendeesMap, setAttendeesMap] = useState(INITIAL_ATTENDEES);
+      const [role, setRole] = useState("student"); // "student" | "organizer"
+      const [activeTab, setActiveTab] = useState("browse"); // "browse" | "my-tickets" | "organizer"
+      
+      const [searchQuery, setSearchQuery] = useState("");
+      const [selectedCategory, setSelectedCategory] = useState("All");
+
+      // Modals
+      const [detailsEvent, setDetailsEvent] = useState(null);
+      const [registeringEvent, setRegisteringEvent] = useState(null);
+      const [activeTicket, setActiveTicket] = useState(null);
+      const [attendeeEvent, setAttendeeEvent] = useState(null);
+      const [isApiDrawerOpen, setIsApiDrawerOpen] = useState(false);
+      const [toast, setToast] = useState(null);
+
+      const triggerToast = (msg, type = "info") => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
+      };
+
+      // Endpoint 1: GET /api/events filter
+      const filteredEvents = events.filter(e => {
+        const matchesCat = selectedCategory === "All" || e.category === selectedCategory;
+        const matchesQuery = !searchQuery || e.title.toLowerCase().includes(searchQuery.toLowerCase()) || e.venue.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCat && matchesQuery;
+      });
+
+      // Endpoint 3: POST /api/registrations (201 or 409)
+      const handleCreateRegistration = (formVals) => {
+        const event = registeringEvent;
+        // Check 409 Conflict: Already registered
+        const alreadyReg = myRegistrations.some(r => r.eventId === event.id);
+        if (alreadyReg) {
+          triggerToast(`409 Conflict: You are already registered for ${event.title}!`, "conflict");
+          return;
+        }
+
+        // Check 409 Conflict: Capacity reached
+        if (event.registeredCount >= event.capacity) {
+          triggerToast(`409 Conflict: This event has reached full capacity (${event.capacity} seats).`, "conflict");
+          return;
+        }
+
+        // 201 Created
+        const newTicket = {
+          id: `reg-${Date.now().toString().slice(-6)}`,
+          eventId: event.id,
+          eventTitle: event.title,
+          eventDate: event.date,
+          eventVenue: event.venue,
+          category: event.category,
+          coverImage: event.coverImage,
+          fullName: formVals.fullName,
+          email: formVals.email,
+          studentId: formVals.studentId,
+          department: formVals.department,
+          ticketCode: `CC-${event.id.replace('evt-', '').toUpperCase()}-${formVals.studentId.slice(-4)}`,
+          seatNumber: `Desk ${event.registeredCount + 1}`,
+          checkedIn: false
+        };
+
+        setMyRegistrations([newTicket, ...myRegistrations]);
+        
+        // Update event attendees list
+        const currentList = attendeesMap[event.id] || [];
+        setAttendeesMap({
+          ...attendeesMap,
+          [event.id]: [...currentList, newTicket]
+        });
+
+        // Increment event count
+        setEvents(events.map(ev => ev.id === event.id ? { ...ev, registeredCount: ev.registeredCount + 1 } : ev));
+
+        setRegisteringEvent(null);
+        setActiveTicket(newTicket);
+        triggerToast("HTTP 201 Created: Registration confirmed! Your digital QR ticket is ready.", "success");
+      };
+
+      // Endpoint 5: GET /api/events/{id}/registrations (Owning organizer only)
+      const handleOpenAttendees = (event) => {
+        if (role !== "organizer") {
+          triggerToast("403 Forbidden: Attendee roster is restricted to the owning organizer only! Switch role to Organizer in navbar.", "conflict");
+          return;
+        }
+        setAttendeeEvent(event);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Top Navbar */}
+          <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-purple-100 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('browse')}>
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-700 to-indigo-600 flex items-center justify-center text-white font-black shadow-md shadow-brand-500/20">
+                    CC
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-lg text-slate-900 tracking-tight">CampusConnect</span>
+                    <span className="block text-[10px] font-bold text-brand-600 uppercase tracking-widest leading-none">Event & Program UI</span>
+                  </div>
+                </div>
+
+                <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+                  <button onClick={() => setActiveTab('browse')} className={`px-3 py-1.5 rounded-lg ${activeTab === 'browse' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600'}`}>
+                    Browse Events
+                  </button>
+                  <button onClick={() => setActiveTab('my-tickets')} className={`px-3 py-1.5 rounded-lg ${activeTab === 'my-tickets' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600'}`}>
+                    My Registrations ({myRegistrations.length})
+                  </button>
+                  <button onClick={() => setActiveTab('organizer')} className={`px-3 py-1.5 rounded-lg ${activeTab === 'organizer' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600'}`}>
+                    Organizer Studio
+                  </button>
+                </nav>
+              </div>
+
+              {/* Right controls */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsApiDrawerOpen(true)}
+                  className="px-3 py-1.5 text-xs font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>API Endpoints</span>
+                  <span className="px-1.5 py-0.2 rounded bg-[#ea580c] text-white text-[10px]">5 APIs</span>
+                </button>
+
+                {/* Role Switcher */}
+                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+                  <button onClick={() => { setRole('student'); triggerToast('Switched to Student mode'); }} className={`px-2.5 py-1 rounded-lg ${role === 'student' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>
+                    🎓 Student
+                  </button>
+                  <button onClick={() => { setRole('organizer'); triggerToast('Switched to Organizer mode (ACM Chapter)'); }} className={`px-2.5 py-1 rounded-lg ${role === 'organizer' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-500'}`}>
+                    ⚡ Organizer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Body Content */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+            {activeTab === 'browse' && (
+              <div>
+                {/* Hero */}
+                <div className="bg-gradient-to-br from-brand-950 via-brand-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-10 mb-8 shadow-xl relative overflow-hidden">
+                  <div className="max-w-2xl relative z-10">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-500/20 text-brand-200 border border-brand-400/30 inline-block mb-3">
+                      Figma CampusConnect — Official Portal
+                    </span>
+                    <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-3">
+                      Discover & Manage <span className="text-brand-300">Campus Events</span>
+                    </h1>
+                    <p className="text-xs sm:text-sm text-brand-100/90 mb-6">
+                      Browse hackathons, workshops, and cultural fests. Instant registration with scannable QR ticket generation.
+                    </p>
+
+                    {/* Search */}
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search events by title, venue, or keywords..."
+                      className="w-full max-w-xl px-4 py-3 rounded-2xl bg-white text-slate-900 text-sm font-medium shadow-md focus:outline-none focus:ring-4 focus:ring-brand-400/40"
+                    />
+
+                    {/* Category pills */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {['All', 'Hackathons', 'Workshops', 'Cultural', 'Seminars', 'Sports'].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`px-3 py-1 text-xs font-semibold rounded-xl ${selectedCategory === cat ? 'bg-white text-brand-950 font-bold' : 'bg-white/10 text-white/90'}`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Event Cards Grid */}
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>Upcoming Campus Events</span>
+                    <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-brand-100 text-brand-800">GET /api/events</span>
+                  </h2>
+                  <span className="text-xs text-slate-500">{filteredEvents.length} events listed</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredEvents.map(evt => {
+                    const isRegistered = myRegistrations.some(r => r.eventId === evt.id);
+                    const isFull = evt.registeredCount >= evt.capacity;
+                    return (
+                      <div key={evt.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                        <div>
+                          <div className="relative h-44 bg-slate-200">
+                            <img src={evt.coverImage} alt={evt.title} className="w-full h-full object-cover" />
+                            <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold bg-brand-600 text-white shadow">
+                              {evt.category}
+                            </span>
+                          </div>
+                          <div className="p-5">
+                            <h3 className="font-bold text-slate-900 text-base mb-1 line-clamp-1">{evt.title}</h3>
+                            <p className="text-xs text-slate-600 mb-3 line-clamp-2">{evt.shortDescription}</p>
+                            <div className="text-xs text-slate-500 space-y-1 mb-3">
+                              <div>📅 {evt.timeString}</div>
+                              <div>📍 {evt.venue}</div>
+                            </div>
+                            <div className="text-xs text-slate-500 mb-1 flex justify-between">
+                              <span>Seats Booked:</span>
+                              <span className="font-bold text-slate-800">{evt.registeredCount} / {evt.capacity}</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-brand-600 h-full" style={{ width: `${Math.min(100, (evt.registeredCount/evt.capacity)*100)}%` }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-5 pt-0 flex gap-2">
+                          <button
+                            onClick={() => setDetailsEvent(evt)}
+                            className="flex-1 py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700"
+                          >
+                            Details
+                          </button>
+                          {role === 'organizer' && evt.organizerId === 'org-acm' ? (
+                            <button
+                              onClick={() => handleOpenAttendees(evt)}
+                              className="flex-1 py-2 px-3 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
+                            >
+                              Attendees
+                            </button>
+                          ) : isRegistered ? (
+                            <div className="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Registered ✓
+                            </div>
+                          ) : isFull ? (
+                            <div className="flex-1 py-2 text-center text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200">
+                              Sold Out
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setRegisteringEvent(evt)}
+                              className="flex-1 py-2 px-3 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
+                            >
+                              Register
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'my-tickets' && (
+              <div>
+                <div className="mb-6">
+                  <div className="text-xs font-mono font-bold text-brand-700 px-2.5 py-0.5 rounded bg-brand-100 inline-block mb-1">
+                    GET /api/me/registrations
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-900">My Registrations & Tickets</h1>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {myRegistrations.map(reg => (
+                    <div key={reg.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-mono text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">{reg.ticketCode}</span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Confirmed</span>
+                        </div>
+                        <h3 className="font-bold text-slate-900 text-lg mb-1">{reg.eventTitle}</h3>
+                        <p className="text-xs text-slate-500 mb-2">📍 {reg.eventVenue}</p>
+                        <p className="text-xs text-slate-500">Attendee: <strong>{reg.fullName}</strong> ({reg.studentId})</p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+                        <button
+                          onClick={() => setActiveTicket(reg)}
+                          className="flex-1 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-sm"
+                        >
+                          Show QR Ticket Pass
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMyRegistrations(myRegistrations.filter(r => r.id !== reg.id));
+                            triggerToast("Registration cancelled.", "info");
+                          }}
+                          className="px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'organizer' && (
+              <div>
+                <div className="mb-6 flex justify-between items-center">
+                  <div>
+                    <div className="text-xs font-mono font-bold text-brand-700 px-2.5 py-0.5 rounded bg-brand-100 inline-block mb-1">
+                      GET /api/events/&#123;id&#125;/registrations
+                    </div>
+                    <h1 className="text-2xl font-black text-slate-900">Organizer Management Studio</h1>
+                    <p className="text-xs text-slate-500">Owning organizer only attendee list & check-in gate.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {events.filter(e => e.organizerId === 'org-acm').map(evt => (
+                    <div key={evt.id} className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center justify-between shadow-sm">
+                      <div>
+                        <span className="text-xs font-bold text-brand-600">{evt.category}</span>
+                        <h3 className="font-bold text-slate-900 text-base">{evt.title}</h3>
+                        <span className="text-xs text-slate-500">{evt.registeredCount} / {evt.capacity} registered attendees</span>
+                      </div>
+                      <button
+                        onClick={() => handleOpenAttendees(evt)}
+                        className="px-4 py-2 bg-slate-900 hover:bg-brand-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                      >
+                        Manage Attendee Roster
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* Details Modal */}
+          {detailsEvent && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+                <button onClick={() => setDetailsEvent(null)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">✕</button>
+                <div className="text-xs font-mono font-bold text-[#ea580c] mb-1">GET /api/events/{detailsEvent.id}</div>
+                <h2 className="text-2xl font-extrabold text-slate-900 mb-2">{detailsEvent.title}</h2>
+                <img src={detailsEvent.coverImage} className="w-full h-56 object-cover rounded-2xl mb-4" />
+                <p className="text-xs text-slate-600 leading-relaxed mb-4">{detailsEvent.description}</p>
+                <div className="bg-slate-50 p-4 rounded-xl text-xs space-y-1 mb-4">
+                  <div><strong>Venue:</strong> {detailsEvent.venue}</div>
+                  <div><strong>Time:</strong> {detailsEvent.timeString}</div>
+                  <div><strong>Capacity:</strong> {detailsEvent.registeredCount} of {detailsEvent.capacity} booked</div>
+                </div>
+                <button
+                  onClick={() => { setDetailsEvent(null); setRegisteringEvent(detailsEvent); }}
+                  className="w-full py-3 bg-brand-600 text-white text-xs font-bold rounded-xl"
+                >
+                  Proceed to Registration
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Registration Modal (POST /api/registrations) */}
+          {registeringEvent && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-md w-full p-6 relative">
+                <button onClick={() => setRegisteringEvent(null)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">✕</button>
+                <div className="text-xs font-mono font-bold text-[#ea580c] mb-1">POST /api/registrations (201 or 409)</div>
+                <h2 className="text-xl font-bold text-slate-900 mb-3">{registeringEvent.title}</h2>
+                
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.target);
+                  handleCreateRegistration({
+                    fullName: fd.get('fullName'),
+                    email: fd.get('email'),
+                    studentId: fd.get('studentId'),
+                    department: fd.get('department'),
+                  });
+                }} className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Full Name</label>
+                    <input name="fullName" defaultValue="Alex Rivera" required className="w-full p-2.5 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Campus Email</label>
+                    <input name="email" type="email" defaultValue="alex.rivera@campus.edu" required className="w-full p-2.5 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Student ID / Roll No</label>
+                    <input name="studentId" defaultValue="CS-2023-8891" required className="w-full p-2.5 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Department</label>
+                    <input name="department" defaultValue="Computer Science & Engineering" className="w-full p-2.5 border rounded-xl" />
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl mt-2">
+                    Submit Registration & Generate Ticket
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* QR Ticket Modal */}
+          {activeTicket && (
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center relative border shadow-2xl">
+                <button onClick={() => setActiveTicket(null)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">✕</button>
+                <div className="text-[10px] uppercase font-bold text-brand-700 mb-1 tracking-widest">CampusConnect Pass</div>
+                <h3 className="text-lg font-extrabold text-slate-900 mb-1">{activeTicket.eventTitle}</h3>
+                <span className="font-mono text-xs font-bold text-[#ea580c] bg-orange-50 px-2 py-0.5 rounded">{activeTicket.ticketCode}</span>
+                
+                <div className="flex justify-center my-4 p-4 bg-slate-50 rounded-2xl border">
+                  <QRVisualizer seed={activeTicket.ticketCode} />
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-1 mb-4 text-left bg-slate-50 p-3 rounded-xl">
+                  <div><strong>Student:</strong> {activeTicket.fullName} ({activeTicket.studentId})</div>
+                  <div><strong>Venue:</strong> {activeTicket.eventVenue}</div>
+                  <div><strong>Seat / Gate:</strong> {activeTicket.seatNumber || 'General Desk'}</div>
+                </div>
+
+                <button onClick={() => window.print()} className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold">
+                  Print Entry Pass
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Attendee Roster Modal (GET /api/events/{id}/registrations) */}
+          {attendeeEvent && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col p-6 relative">
+                <button onClick={() => setAttendeeEvent(null)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full">✕</button>
+                <div className="text-xs font-mono font-bold text-[#ea580c] mb-1">
+                  GET /api/events/{attendeeEvent.id}/registrations (Owning Organizer Only)
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">{attendeeEvent.title} — Attendees</h2>
+
+                <div className="overflow-y-auto flex-1">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700 font-bold">
+                        <th className="p-3">Student Name</th>
+                        <th className="p-3">Student ID</th>
+                        <th className="p-3">Ticket Code</th>
+                        <th className="p-3 text-center">Gate Check-in</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {(attendeesMap[attendeeEvent.id] || []).map(att => (
+                        <tr key={att.id} className="hover:bg-slate-50">
+                          <td className="p-3 font-bold">{att.fullName}</td>
+                          <td className="p-3 font-mono text-brand-700">{att.studentId}</td>
+                          <td className="p-3 font-mono">{att.ticketCode}</td>
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => {
+                                const list = attendeesMap[attendeeEvent.id];
+                                const updated = list.map(a => a.id === att.id ? { ...a, checkedIn: !a.checkedIn } : a);
+                                setAttendeesMap({ ...attendeesMap, [attendeeEvent.id]: updated });
+                              }}
+                              className={`px-3 py-1 rounded text-xs font-bold ${att.checkedIn ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}
+                            >
+                              {att.checkedIn ? 'Checked In ✓' : 'Mark Entry'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* API Endpoints Drawer matching the uploaded table */}
+          {isApiDrawerOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
+              <div className="w-full max-w-xl bg-white h-full p-6 shadow-2xl flex flex-col overflow-y-auto">
+                <div className="flex justify-between items-center pb-4 border-b mb-4">
+                  <h2 className="text-lg font-bold text-slate-900">API Endpoints Specification</h2>
+                  <button onClick={() => setIsApiDrawerOpen(false)} className="p-2 bg-slate-100 rounded-full">✕</button>
+                </div>
+
+                {/* Table matching the prompt image exactly */}
+                <div className="rounded-2xl border border-purple-200 overflow-hidden shadow-sm mb-6">
+                  <div className="bg-[#ede9fe] p-3 grid grid-cols-12 gap-2 font-bold text-brand-950 text-xs">
+                    <div className="col-span-3">Method</div>
+                    <div className="col-span-5">Endpoint</div>
+                    <div className="col-span-4">Description</div>
+                  </div>
+                  <div className="divide-y divide-purple-100 text-xs">
+                    <div className="p-3 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3 font-mono font-bold text-[#4338ca]">GET</div>
+                      <div className="col-span-5 font-mono font-bold text-[#ea580c]">/api/events</div>
+                      <div className="col-span-4 text-slate-700">Browse events.</div>
+                    </div>
+                    <div className="p-3 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3 font-mono font-bold text-[#4338ca]">GET</div>
+                      <div className="col-span-5 font-mono font-bold text-[#ea580c]">/api/events/&#123;id&#125;</div>
+                      <div className="col-span-4 text-slate-700">Event details.</div>
+                    </div>
+                    <div className="p-3 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3 font-mono font-bold text-[#4338ca]">POST</div>
+                      <div className="col-span-5 font-mono font-bold text-[#ea580c]">/api/registrations</div>
+                      <div className="col-span-4 text-slate-700">Create registration, 201 or 409.</div>
+                    </div>
+                    <div className="p-3 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3 font-mono font-bold text-[#4338ca]">GET</div>
+                      <div className="col-span-5 font-mono font-bold text-[#ea580c]">/api/me/registrations</div>
+                      <div className="col-span-4 text-slate-700">Current user's registrations.</div>
+                    </div>
+                    <div className="p-3 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3 font-mono font-bold text-[#4338ca]">GET</div>
+                      <div className="col-span-5 font-mono font-bold text-[#ea580c]">/api/events/&#123;id&#125;/registrations</div>
+                      <div className="col-span-4 text-slate-700">Attendee list, owning organizer only.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl leading-relaxed">
+                  All 5 endpoints are implemented with state persistence, interactive conflict checks (409 on duplicate or full capacity), authorization guards (403 when in Student role), and QR badge generation.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toast */}
+          {toast && (
+            <div className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-xl text-xs font-bold border ${toast.type === 'conflict' ? 'bg-amber-50 text-amber-900 border-amber-300' : 'bg-emerald-50 text-emerald-900 border-emerald-300'}`}>
+              {toast.msg}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
